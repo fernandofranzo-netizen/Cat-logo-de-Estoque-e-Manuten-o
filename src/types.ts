@@ -10,6 +10,13 @@ export interface StockItem {
   // Computed / simulated warehouse location
   localizacao?: string;
   unidadeMedida?: string;
+  unidade?: string;
+  rua?: string;
+  prateleira?: string;
+  gaveta?: string;
+  subGaveta?: string;
+  localizacaoCompleta?: string;
+  tags?: string[];
 }
 
 export interface RequisitionItem {

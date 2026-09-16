@@ -19,9 +19,11 @@ import { TopHeader } from './components/TopHeader';
 import { SearchFilterBar } from './components/SearchFilterBar';
 import { ItemCard } from './components/ItemCard';
 import { ItemTableView } from './components/ItemTableView';
-import { ItemDetailModal } from './components/ItemDetailModal';
+import { ItemDetailView } from './components/ItemDetailView';
 import { RequisitionDrawer } from './components/RequisitionDrawer';
 import { AdminModal } from './components/AdminModal';
+import { AdminView } from './components/AdminView';
+import { PinModal } from './components/PinModal';
 
 import {
   Search,
@@ -65,11 +67,33 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Modals & Drawers
+  // Modals & Drawers & Views
+  const [activeView, setActiveView] = useState<'consulta' | 'admin'>('consulta');
+  const [isGestorUnlocked, setIsGestorUnlocked] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
   const [isRequisitionsOpen, setIsRequisitionsOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Admin item updates
+  const handleAddItem = (newItem: StockItem) => {
+    setItems((prev) => [newItem, ...prev]);
+  };
+
+  const handleUpdateItem = (updatedItem: StockItem) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === updatedItem.id ? updatedItem : it))
+    );
+  };
+
+  const handleOpenAdmin = () => {
+    if (isGestorUnlocked) {
+      setActiveView('admin');
+    } else {
+      setIsPinModalOpen(true);
+    }
+  };
 
   // Requisitions Basket
   const [requisitions, setRequisitions] = useState<RequisitionItem[]>(() => {
@@ -338,11 +362,18 @@ export default function App() {
         onSelectCategory={(cat) => {
           setSelectedCategory(cat);
           setSelectedSubCategory('');
+          setSelectedItem(null);
+          setActiveView('consulta');
           setCurrentPage(1);
         }}
         selectedGroup={selectedGroup}
-        onSelectGroup={setSelectedGroup}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onSelectGroup={(grp) => {
+          setSelectedGroup(grp);
+          setSelectedItem(null);
+          setActiveView('consulta');
+          setCurrentPage(1);
+        }}
+        onOpenAdmin={handleOpenAdmin}
         onOpenRequisitions={() => setIsRequisitionsOpen(true)}
         requisitionsCount={requisitions.length}
         isAuthenticated={isAuthenticated}
@@ -353,28 +384,51 @@ export default function App() {
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         isSyncing={isSyncing}
         onSyncNow={performSync}
+        activeView={activeView}
+        isGestorActive={isGestorUnlocked}
+        onSelectView={(view) => {
+          setActiveView(view);
+          setSelectedItem(null);
+        }}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <TopHeader
-          onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          syncStatus={syncStatus}
-          lastSyncTime={lastSyncTime}
-          onSyncNow={performSync}
-          isSyncing={isSyncing}
-          syncIntervalMs={config.autoSyncIntervalMs}
-          onChangeSyncInterval={(newInterval) =>
-            setConfig((prev) => ({ ...prev, autoSyncIntervalMs: newInterval }))
-          }
-          requisitionsCount={requisitions.length}
-          onOpenRequisitions={() => setIsRequisitionsOpen(true)}
-          isAuthenticated={isAuthenticated}
-          userEmail={user?.email}
-          onLogin={handleGoogleLogin}
-          onLogout={handleLogout}
-        />
+      {/* Main View: Item Detail OR Admin Console OR Public Catalog */}
+      {selectedItem ? (
+        <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc] overflow-y-auto">
+          <ItemDetailView
+            item={selectedItem}
+            onBack={() => setSelectedItem(null)}
+            onAddToRequisition={handleAddToRequisition}
+          />
+        </div>
+      ) : activeView === 'admin' ? (
+        <div className="flex-1 flex flex-col min-w-0 bg-[#f8fafc] overflow-y-auto">
+          <AdminView
+            items={items}
+            onUpdateItem={handleUpdateItem}
+            onAddItem={handleAddItem}
+            onBackToCatalog={() => setActiveView('consulta')}
+            onExitGestor={() => {
+              setIsGestorUnlocked(false);
+              setActiveView('consulta');
+            }}
+            config={config}
+            onSaveConfig={(newConfig) => {
+              setConfig(newConfig);
+              performSync();
+            }}
+            onForceSync={performSync}
+            isSyncing={isSyncing}
+            lastSyncTime={lastSyncTime}
+            onSelectItemForDetail={(item) => setSelectedItem(item)}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Header */}
+          <TopHeader
+            onToggleMobileSidebar={() => setIsMobileSidebarOpen(true)}
+          />
 
         {/* Sync Alert Banner if error occurs */}
         {syncStatus === 'error' && syncErrorMsg && (
@@ -537,13 +591,7 @@ export default function App() {
           )}
         </main>
       </div>
-
-      {/* Item Technical Detail Modal */}
-      <ItemDetailModal
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
-        onAddToRequisition={handleAddToRequisition}
-      />
+      )}
 
       {/* Requisition Basket Drawer */}
       <RequisitionDrawer
@@ -570,6 +618,17 @@ export default function App() {
         isSyncing={isSyncing}
         isAuthenticated={isAuthenticated}
         userEmail={user?.email}
+      />
+
+      {/* PIN Prompt Modal (Protected by 1234) */}
+      <PinModal
+        isOpen={isPinModalOpen}
+        onClose={() => setIsPinModalOpen(false)}
+        onSuccess={() => {
+          setIsGestorUnlocked(true);
+          setActiveView('admin');
+          setIsPinModalOpen(false);
+        }}
       />
     </div>
   );
