@@ -1,0 +1,6 @@
+{
+  "name": "Catálogo de Estoque e Manutenção",
+  "description": "Consulta de itens do estoque e almoxarifado com sincronização em tempo real via Google Sheets e autenticação segura.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
