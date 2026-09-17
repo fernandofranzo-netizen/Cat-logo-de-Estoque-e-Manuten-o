@@ -114,11 +114,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const content = (
     <div className="flex flex-col h-full bg-[#09101d] text-slate-300 select-none border-r border-slate-800/80 w-72 shrink-0">
       {/* Brand Header */}
-      <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-sky-600 border border-sky-500 text-white font-black flex items-center justify-center text-sm tracking-wider shadow-inner">
-            CM
-          </div>
+      <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/cm-logo.svg"
+            alt="CM - Catálogo de Manutenção"
+            width={34}
+            height={34}
+            className="w-8 h-8 rounded-lg shadow-sm shrink-0 object-contain"
+          />
           <div>
             <div className="flex items-center gap-1.5">
               <h1 className="text-xs font-bold text-white tracking-widest uppercase">
@@ -129,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
             <p className="text-[10px] font-mono tracking-wider text-slate-400 uppercase">
-              Manutenção // v2.4
+              Manutenção // Almoxarifado
             </p>
           </div>
         </div>

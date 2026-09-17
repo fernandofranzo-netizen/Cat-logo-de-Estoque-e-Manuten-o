@@ -37,20 +37,15 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           </div>
         </div>
 
-        {/* Industrial Plant Logo Emblem */}
-        <div className="hidden lg:flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 shrink-0">
-          <div className="text-right">
-            <div className="text-[10px] font-mono tracking-widest text-slate-400 uppercase font-semibold">
-              UNIDADE INDUSTRIAL
-            </div>
-            <div className="text-xs font-bold text-slate-800 tracking-wide uppercase">
-              ALMOXARIFADO MANUTENÇÃO
-            </div>
-          </div>
-          <div className="h-9 w-px bg-slate-200" />
-          <div className="px-2 py-1 font-black tracking-tighter text-xl text-sky-900 flex items-center gap-1 font-sans">
-            <span className="text-sky-600">M</span>anutamaki
-          </div>
+        {/* Industrial Plant Logo Badge (Substituído com a imagem oficial Manutamaki) */}
+        <div className="hidden sm:flex items-center shrink-0">
+          <img
+            src="/manutamaki-logo.svg"
+            alt="Manutamaki - Unidade Industrial Almoxarifado Manutenção"
+            width={380}
+            height={94}
+            className="h-14 lg:h-16 w-auto object-contain transition-transform hover:scale-[1.02]"
+          />
         </div>
       </div>
     </header>
