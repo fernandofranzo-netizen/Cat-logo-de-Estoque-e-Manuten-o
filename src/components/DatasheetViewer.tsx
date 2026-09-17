@@ -3,13 +3,10 @@ import Markdown from 'react-markdown';
 import { StockItem, DatasheetResult, GroundingSource } from '../types';
 import { requestItemDatasheet } from '../services/datasheetService';
 import { parseItemTechnicalDimensions } from '../utils/technicalDimensions';
+import { generateDatasheetPdf } from '../utils/pdfGenerator';
 import {
   FileText,
-  Download,
   Printer,
-  Copy,
-  Check,
-  RefreshCw,
   ExternalLink,
   ShieldCheck,
   AlertCircle,
@@ -32,7 +29,6 @@ export const DatasheetViewer: React.FC<DatasheetViewerProps> = ({
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DatasheetResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Fetch or generate datasheet via Google Grounding or engineering fallback
   const fetchDatasheet = useCallback(async (forceRefresh = false) => {
@@ -63,35 +59,9 @@ export const DatasheetViewer: React.FC<DatasheetViewerProps> = ({
 
   if (!isOpen) return null;
 
-  // Handle Copy
-  const handleCopy = async () => {
-    if (!data?.markdown) return;
-    try {
-      await navigator.clipboard.writeText(data.markdown);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
-
-  // Handle Download File (.md)
-  const handleDownloadFile = () => {
-    if (!data?.markdown) return;
-    const blob = new Blob([data.markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `DATASHEET_${item.codigo}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Handle Print
+  // Handle Print / PDF generation
   const handlePrint = () => {
-    window.print();
+    generateDatasheetPdf(item, data?.markdown, data?.sources);
   };
 
   return (
@@ -125,14 +95,6 @@ export const DatasheetViewer: React.FC<DatasheetViewerProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => fetchDatasheet(true)}
-              disabled={loading}
-              title="Regerar via Google Grounding"
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-600' : ''}`} />
-            </button>
             <button
               onClick={onClose}
               className="px-3 py-1.5 text-xs font-mono font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer"
@@ -193,39 +155,15 @@ export const DatasheetViewer: React.FC<DatasheetViewerProps> = ({
                   </div>
                 </div>
 
-                {/* Quick Action Toolbar */}
+                {/* Quick Action Toolbar - Only Print button */}
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={handleDownloadFile}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Baixar Arquivo (.md)</span>
-                  </button>
-
-                  <button
                     onClick={handlePrint}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
+                    title="Imprimir e salvar ficha técnica em formato PDF"
                   >
-                    <Printer className="w-3.5 h-3.5 text-slate-600" />
+                    <Printer className="w-3.5 h-3.5 text-slate-700" />
                     <span>Imprimir</span>
-                  </button>
-
-                  <button
-                    onClick={handleCopy}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Copiado!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copiar Ficha</span>
-                      </>
-                    )}
                   </button>
                 </div>
               </div>

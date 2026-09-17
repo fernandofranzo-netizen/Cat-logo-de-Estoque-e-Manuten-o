@@ -3,8 +3,8 @@ import Markdown from 'react-markdown';
 import { StockItem, DatasheetResult, GroundingSource } from '../types';
 import { requestItemDatasheet } from '../services/datasheetService';
 import { parseItemTechnicalDimensions } from '../utils/technicalDimensions';
+import { generateDatasheetPdf } from '../utils/pdfGenerator';
 import { RealisticItemVisual } from './RealisticItemVisual';
-import { DatasheetViewer } from './DatasheetViewer';
 import {
   ArrowLeft,
   Copy,
@@ -18,12 +18,9 @@ import {
   Printer,
   Sparkles,
   Globe,
-  Download,
-  RefreshCw,
   ExternalLink,
   ShieldCheck,
   AlertCircle,
-  Maximize2,
 } from 'lucide-react';
 
 interface ItemDetailViewProps {
@@ -70,11 +67,10 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
   onAddToRequisition,
 }) => {
   const [copiedCode, setCopiedCode] = useState(false);
-  const [isDatasheetModalOpen, setIsDatasheetModalOpen] = useState(false);
   const [datasheetData, setDatasheetData] = useState<DatasheetResult | null>(null);
   const [datasheetLoading, setDatasheetLoading] = useState(false);
   const [datasheetError, setDatasheetError] = useState<string | null>(null);
-  const [datasheetCopied, setDatasheetCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
   // Fetch or generate datasheet via Google Grounding or engineering fallback
@@ -113,30 +109,27 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
     }
   };
 
-  // Copy datasheet markdown to clipboard
-  const handleCopyDatasheet = async () => {
-    if (!datasheetData?.markdown) return;
+  // Print / Save Data-Sheet as PDF for Mobile, Tablet, and Desktop
+  const handlePrintPdf = async () => {
+    setIsGeneratingPdf(true);
     try {
-      await navigator.clipboard.writeText(datasheetData.markdown);
-      setDatasheetCopied(true);
-      setTimeout(() => setDatasheetCopied(false), 2000);
-    } catch {
-      // fallback
+      if (datasheetData?.markdown) {
+        generateDatasheetPdf(item, datasheetData.markdown, datasheetData.sources);
+      } else {
+        const res = await requestItemDatasheet(item, false);
+        if (res.success && res.data) {
+          setDatasheetData(res.data);
+          generateDatasheetPdf(item, res.data.markdown, res.data.sources);
+        } else {
+          generateDatasheetPdf(item);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao gerar PDF do Data-Sheet:', err);
+      generateDatasheetPdf(item);
+    } finally {
+      setIsGeneratingPdf(false);
     }
-  };
-
-  // Download Datasheet File (.md)
-  const handleDownloadDatasheetFile = () => {
-    if (!datasheetData?.markdown) return;
-    const blob = new Blob([datasheetData.markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `DATASHEET_${item.codigo}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   // Friendly subcategory name
@@ -240,10 +233,6 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
 
     return list;
   }, [item, friendlySubCategory, categoryFormatted]);
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return (
     <div className="flex-1 bg-[#f8fafc] min-h-screen p-4 sm:p-8 max-w-[1600px] w-full mx-auto text-slate-800 space-y-6">
@@ -490,62 +479,16 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
             </div>
           </div>
 
-          {/* Action buttons toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Action buttons toolbar: Only the Print / Save PDF button */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => setIsDatasheetModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
-              title="Expandir em tela cheia"
+              onClick={handlePrintPdf}
+              disabled={isGeneratingPdf}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100 text-slate-700 hover:text-slate-900 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+              title="Imprimir e salvar ficha técnica completa em PDF"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
-              <span>Expandir</span>
-            </button>
-
-            {datasheetData && (
-              <>
-                <button
-                  onClick={handleDownloadDatasheetFile}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
-                  title="Baixar arquivo markdown"
-                >
-                  <Download className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Baixar .md</span>
-                </button>
-
-                <button
-                  onClick={handlePrint}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Imprimir</span>
-                </button>
-
-                <button
-                  onClick={handleCopyDatasheet}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
-                >
-                  {datasheetCopied ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Copiado!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copiar Ficha</span>
-                    </>
-                  )}
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => loadDatasheet(true)}
-              disabled={datasheetLoading}
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-              title="Regerar via Google Grounding"
-            >
-              <RefreshCw className={`w-4 h-4 ${datasheetLoading ? 'animate-spin text-teal-600' : ''}`} />
+              <Printer className="w-4 h-4 text-slate-700" />
+              <span>{isGeneratingPdf ? 'Gerando PDF...' : 'Imprimir'}</span>
             </button>
           </div>
         </div>
@@ -672,13 +615,6 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
           )}
         </div>
       </div>
-
-      {/* Fullscreen Datasheet Modal */}
-      <DatasheetViewer
-        item={item}
-        isOpen={isDatasheetModalOpen}
-        onClose={() => setIsDatasheetModalOpen(false)}
-      />
     </div>
   );
 };
