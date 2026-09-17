@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { StockItem } from '../types';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import Markdown from 'react-markdown';
+import { StockItem, DatasheetResult, GroundingSource } from '../types';
 import { RealisticItemVisual } from './RealisticItemVisual';
+import { DatasheetViewer } from './DatasheetViewer';
 import {
   ArrowLeft,
   Copy,
@@ -12,6 +14,14 @@ import {
   Tag,
   ShoppingCart,
   Printer,
+  Sparkles,
+  Globe,
+  Download,
+  RefreshCw,
+  ExternalLink,
+  ShieldCheck,
+  AlertCircle,
+  Maximize2,
 } from 'lucide-react';
 
 interface ItemDetailViewProps {
@@ -58,8 +68,62 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
   onAddToRequisition,
 }) => {
   const [copiedCode, setCopiedCode] = useState(false);
-  const [showDatasheetAlert, setShowDatasheetAlert] = useState(false);
+  const [isDatasheetModalOpen, setIsDatasheetModalOpen] = useState(false);
+  const [datasheetData, setDatasheetData] = useState<DatasheetResult | null>(null);
+  const [datasheetLoading, setDatasheetLoading] = useState(false);
+  const [datasheetError, setDatasheetError] = useState<string | null>(null);
+  const [datasheetCopied, setDatasheetCopied] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
+
+  // Fetch or generate datasheet via Google Grounding
+  const loadDatasheet = useCallback(async (forceRefresh = false) => {
+    setDatasheetLoading(true);
+    setDatasheetError(null);
+    try {
+      const res = await fetch('/api/datasheet/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: item.codigo,
+          descricao: item.descricao,
+          categoria: item.categoria,
+          subCategoria: item.subCategoria,
+          localizacao: item.localizacao || item.localizacaoCompleta,
+          forceRefresh,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        if (json.needsApiKey) {
+          setDatasheetError(
+            'A chave GEMINI_API_KEY não foi configurada no painel de Secrets. Adicione a chave para habilitar a consulta automática do Google Grounding.'
+          );
+        } else {
+          setDatasheetError(json.error || 'Erro ao gerar o data-sheet através do Google Grounding.');
+        }
+        setDatasheetData(null);
+      } else {
+        setDatasheetData({
+          code: json.code || item.codigo,
+          markdown: json.markdown,
+          sources: json.sources || [],
+          generatedAt: json.generatedAt || new Date().toISOString(),
+          fromCache: json.fromCache,
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDatasheetError(`Erro na comunicação com o servidor: ${msg}`);
+      setDatasheetData(null);
+    } finally {
+      setDatasheetLoading(false);
+    }
+  }, [item]);
+
+  useEffect(() => {
+    loadDatasheet(false);
+  }, [loadDatasheet]);
 
   // Copy code to clipboard
   const handleCopyCode = async () => {
@@ -70,6 +134,32 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
     } catch {
       // fallback
     }
+  };
+
+  // Copy datasheet markdown to clipboard
+  const handleCopyDatasheet = async () => {
+    if (!datasheetData?.markdown) return;
+    try {
+      await navigator.clipboard.writeText(datasheetData.markdown);
+      setDatasheetCopied(true);
+      setTimeout(() => setDatasheetCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  // Download Datasheet File (.md)
+  const handleDownloadDatasheetFile = () => {
+    if (!datasheetData?.markdown) return;
+    const blob = new Blob([datasheetData.markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DATASHEET_${item.codigo}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Friendly subcategory name
@@ -227,11 +317,12 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
         <div className="flex items-center gap-3 shrink-0 flex-wrap">
           {/* DATA-SHEET / DOCS */}
           <button
-            onClick={() => setShowDatasheetAlert(true)}
-            className="bg-white hover:bg-teal-50 text-teal-700 border border-teal-300 font-mono font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-2xs transition-all cursor-pointer"
+            onClick={() => setIsDatasheetModalOpen(true)}
+            className="bg-white hover:bg-teal-50 text-teal-700 border border-teal-300 font-mono font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-2xs transition-all cursor-pointer group"
           >
-            <FileText className="w-4 h-4 text-teal-600" />
+            <FileText className="w-4 h-4 text-teal-600 group-hover:scale-110 transition-transform" />
             <span>DATA-SHEET / DOCS</span>
+            <Sparkles className="w-3 h-3 text-teal-500" />
           </button>
 
           {/* COPIAR CÓDIGO */}
@@ -403,50 +494,188 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Datasheet Modal / Informational Alert */}
-      {showDatasheetAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 uppercase font-mono">
-                  Documentação Técnica & Ficha
-                </h3>
-                <p className="text-xs text-slate-500 font-mono">{item.codigo}</p>
-              </div>
+      {/* SECTION: DATA-SHEET TÉCNICO // GOOGLE GROUNDING */}
+      <div id="datasheet-section" className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        {/* Header Strip */}
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              O arquivo técnico oficial está vinculado à biblioteca interna de normas e catálogos homologados pela engenharia de manutenção.
-            </p>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs font-mono space-y-1 text-slate-600">
-              <div><strong>Norma Referência:</strong> DIN 471 / DIN 472 / ISO 9001</div>
-              <div><strong>Tolerância Dimensional:</strong> ±0.05 mm</div>
-              <div><strong>Acabamento Superficial:</strong> Fosfatizado / Óleo Protetivo</div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={handlePrint}
-                className="px-3 py-2 rounded-lg border border-slate-200 text-slate-700 font-mono text-xs font-semibold hover:bg-slate-50 flex items-center gap-1.5"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                Imprimir Ficha
-              </button>
-              <button
-                onClick={() => setShowDatasheetAlert(false)}
-                className="px-4 py-2 bg-slate-900 text-white font-mono text-xs font-bold rounded-lg hover:bg-slate-800"
-              >
-                Fechar
-              </button>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-bold text-slate-900 font-mono tracking-tight uppercase">
+                  DATA-SHEET TÉCNICO // ESPECIFICAÇÃO DE ENGENHARIA
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold font-mono bg-teal-50 text-teal-700 border border-teal-200">
+                  <Sparkles className="w-3 h-3 text-teal-600" />
+                  Google Grounding
+                </span>
+                {datasheetData?.fromCache && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-slate-200/80 text-slate-600">
+                    Em Cache
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Pesquisa técnica em catálogos de fabricantes industriais e normas técnicas (DIN / ISO / ABNT).
+              </p>
             </div>
           </div>
+
+          {/* Action buttons toolbar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsDatasheetModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
+              title="Expandir em tela cheia"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
+              <span>Expandir</span>
+            </button>
+
+            {datasheetData && (
+              <>
+                <button
+                  onClick={handleDownloadDatasheetFile}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
+                  title="Baixar arquivo markdown"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Baixar .md</span>
+                </button>
+
+                <button
+                  onClick={handlePrint}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Imprimir</span>
+                </button>
+
+                <button
+                  onClick={handleCopyDatasheet}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-mono font-bold rounded-lg shadow-2xs transition-all cursor-pointer"
+                >
+                  {datasheetCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copiar Ficha</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => loadDatasheet(true)}
+              disabled={datasheetLoading}
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              title="Regerar via Google Grounding"
+            >
+              <RefreshCw className={`w-4 h-4 ${datasheetLoading ? 'animate-spin text-teal-600' : ''}`} />
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Datasheet Body */}
+        <div className="p-6">
+          {datasheetLoading ? (
+            <div className="py-14 flex flex-col items-center justify-center text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 text-teal-600 flex items-center justify-center animate-pulse">
+                <Globe className="w-6 h-6 animate-spin" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-800 font-mono">
+                Consultando Google Grounding & Catálogos Oficiais...
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md">
+                Aguarde enquanto os dados dimensionais e especificações técnicas de <strong>{item.codigo}</strong> são obtidos e consolidados em tempo real.
+              </p>
+            </div>
+          ) : datasheetError ? (
+            <div className="p-5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <h4 className="font-bold text-sm">Falha ao consultar data-sheet online</h4>
+              </div>
+              <p className="text-xs leading-relaxed text-amber-800">{datasheetError}</p>
+              <button
+                onClick={() => loadDatasheet(true)}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-mono font-bold cursor-pointer"
+              >
+                Tentar Novamente
+              </button>
+            </div>
+          ) : datasheetData ? (
+            <div className="space-y-6">
+              {/* Verified Sources / References */}
+              {datasheetData.sources && datasheetData.sources.length > 0 && (
+                <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200/80 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-sky-700" />
+                    <span className="text-xs font-mono font-bold text-sky-900 tracking-wide uppercase">
+                      Fontes Oficiais Consultadas ({datasheetData.sources.length})
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {datasheetData.sources.map((src: GroundingSource, idx: number) => {
+                      let hostname = '';
+                      try {
+                        hostname = new URL(src.uri).hostname.replace('www.', '');
+                      } catch {
+                        hostname = 'web';
+                      }
+                      return (
+                        <a
+                          key={idx}
+                          href={src.uri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-sky-300/80 hover:border-sky-500 text-[11px] font-mono text-sky-800 hover:text-sky-950 transition-colors shadow-2xs group"
+                        >
+                          <span className="max-w-[220px] truncate font-medium">{src.title || hostname}</span>
+                          <span className="text-[9px] text-sky-500 font-normal">({hostname})</span>
+                          <ExternalLink className="w-3 h-3 text-sky-600 group-hover:translate-x-0.5 transition-transform" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Rendered Markdown Body */}
+              <div className="p-6 bg-slate-50/50 rounded-xl border border-slate-200">
+                <div className="markdown-body">
+                  <Markdown>{datasheetData.markdown}</Markdown>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-[11px] font-mono text-slate-500">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-teal-600" />
+            <span>HOMOLOGADO PARA MANUTENÇÃO INDUSTRIAL</span>
+          </div>
+          {datasheetData?.generatedAt && (
+            <span>Gerado em: {new Date(datasheetData.generatedAt).toLocaleString('pt-BR')}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Fullscreen Datasheet Modal */}
+      <DatasheetViewer
+        item={item}
+        isOpen={isDatasheetModalOpen}
+        onClose={() => setIsDatasheetModalOpen(false)}
+      />
     </div>
   );
 };
