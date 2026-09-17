@@ -251,21 +251,6 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
               </>
             )}
           </button>
-
-          {/* Add to requisition basket if available */}
-          {onAddToRequisition && (
-            <button
-              onClick={() => {
-                onAddToRequisition(item, 1);
-                setAddedNotice(true);
-                setTimeout(() => setAddedNotice(false), 2000);
-              }}
-              className="bg-slate-900 hover:bg-slate-800 text-white font-mono font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-            >
-              <ShoppingCart className="w-4 h-4 text-sky-400" />
-              <span>{addedNotice ? 'REQUISITADO!' : '+ REQUISIÇÃO'}</span>
-            </button>
-          )}
         </div>
       </div>
 

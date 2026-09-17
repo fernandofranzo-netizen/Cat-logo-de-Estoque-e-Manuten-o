@@ -1,84 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 94" width="380" height="94">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 84" width="350" height="84">
   <defs>
-    <filter id="soft-shadow" x="-5%" y="-10%" width="110%" height="130%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.04" />
+    <filter id="badge-shadow" x="-5%" y="-10%" width="110%" height="125%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.04" />
     </filter>
   </defs>
 
-  <!-- Card Background -->
+  <!-- Clean Rounded Card Box -->
   <rect 
     x="1.5" 
     y="1.5" 
-    width="377" 
-    height="91" 
-    rx="14" 
-    ry="14" 
+    width="347" 
+    height="81" 
+    rx="12" 
     fill="#ffffff" 
     stroke="#e2e8f0" 
     stroke-width="1.5"
-    filter="url(#soft-shadow)"
+    filter="url(#badge-shadow)"
   />
 
-  <!-- Left: Brand Name "Manutamaki" -->
+  <!-- Left: "Manutamaki" Brand -->
   <text 
-    x="28" 
-    y="56" 
-    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
-    font-size="33" 
+    x="22" 
+    y="51" 
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+    font-size="28" 
     font-weight="900" 
     letter-spacing="-0.5px"
   >
-    <tspan fill="#002d7a">Manuta</tspan><tspan fill="#1e72db">maki</tspan>
+    <tspan fill="#003399">Manuta</tspan><tspan fill="#1d72dd">maki</tspan>
   </text>
 
   <!-- Vertical Divider Line -->
   <line 
-    x1="216" 
-    y1="22" 
-    x2="216" 
-    y2="72" 
-    stroke="#d8e2ec" 
+    x1="184" 
+    y1="18" 
+    x2="184" 
+    y2="66" 
+    stroke="#e2e8f0" 
     stroke-width="1.5" 
-    stroke-linecap="round"
   />
 
-  <!-- Right: Technical Unit Description -->
+  <!-- Right: 3 Lines Right-Aligned -->
   <!-- Line 1: UNIDADE INDUSTRIAL -->
   <text 
-    x="234" 
-    y="35" 
-    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
-    font-size="10.5" 
+    x="328" 
+    y="31" 
+    text-anchor="end"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+    font-size="9.5" 
     font-weight="600" 
     fill="#64748b" 
-    letter-spacing="1.8px"
-  >
-    UNIDADE INDUSTRIAL
-  </text>
+    letter-spacing="1.5px"
+  >UNIDADE INDUSTRIAL</text>
 
   <!-- Line 2: ALMOXARIFADO -->
   <text 
-    x="234" 
-    y="53" 
-    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
-    font-size="13.5" 
+    x="328" 
+    y="48" 
+    text-anchor="end"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+    font-size="12.5" 
     font-weight="800" 
-    fill="#002d7a" 
-    letter-spacing="0.6px"
-  >
-    ALMOXARIFADO
-  </text>
+    fill="#003399" 
+    letter-spacing="0.5px"
+  >ALMOXARIFADO</text>
 
   <!-- Line 3: MANUTENÇÃO -->
   <text 
-    x="234" 
-    y="71" 
-    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
-    font-size="13.5" 
+    x="328" 
+    y="65" 
+    text-anchor="end"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
+    font-size="12.5" 
     font-weight="800" 
-    fill="#002d7a" 
-    letter-spacing="0.6px"
-  >
-    MANUTENÇÃO
-  </text>
+    fill="#003399" 
+    letter-spacing="0.5px"
+  >MANUTENÇÃO</text>
 </svg>

@@ -4,7 +4,6 @@ import { RealisticItemVisual } from './RealisticItemVisual';
 import {
   Copy,
   Check,
-  Heart,
   ArrowRight,
 } from 'lucide-react';
 
@@ -12,8 +11,8 @@ interface ItemCardProps {
   item: StockItem;
   onOpenDetails: (item: StockItem) => void;
   onAddToRequisition: (item: StockItem, qty: number) => void;
-  isBookmarked: boolean;
-  onToggleBookmark: (itemId: string) => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (itemId: string) => void;
 }
 
 // Format category names with proper Portuguese orthography
@@ -50,11 +49,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     } catch {
       // fallback
     }
-  };
-
-  const handleBookmark = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleBookmark(item.id);
   };
 
   // Format category
@@ -106,33 +100,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             descricao={item.descricao}
             className="max-w-[180px] max-h-[180px]"
           />
-        </div>
-
-        {/* Top-Right Action Icons Matching Screenshot */}
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-20">
-          <button
-            onClick={handleCopyCode}
-            className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-slate-400 hover:text-slate-800 border border-slate-200/80 shadow-2xs transition-colors cursor-pointer"
-            title="Copiar código"
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-          </button>
-
-          <button
-            onClick={handleBookmark}
-            className={`p-1.5 rounded-lg border shadow-2xs transition-colors cursor-pointer ${
-              isBookmarked
-                ? 'bg-rose-50 border-rose-200 text-rose-500'
-                : 'bg-white/90 hover:bg-white text-slate-300 hover:text-rose-500 border-slate-200/80'
-            }`}
-            title={isBookmarked ? 'Remover dos favoritos' : 'Favoritar item'}
-          >
-            <Heart className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
-          </button>
         </div>
 
         {/* Bottom-Left Reference Label */}

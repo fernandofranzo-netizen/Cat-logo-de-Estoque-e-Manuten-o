@@ -1,5 +1,6 @@
 import React from 'react';
 import { Menu } from 'lucide-react';
+import { ManutamakiBadge } from './ManutamakiBadge';
 
 interface TopHeaderProps {
   onToggleMobileSidebar: () => void;
@@ -11,7 +12,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   return (
     <header className="bg-white border-b border-slate-200/90 shadow-2xs">
       {/* Main Title Section */}
-      <div className="px-4 sm:px-8 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="px-4 sm:px-8 py-4 sm:py-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <button
             onClick={onToggleMobileSidebar}
@@ -37,15 +38,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           </div>
         </div>
 
-        {/* Industrial Plant Logo Badge (Substituído com a imagem oficial Manutamaki) */}
-        <div className="hidden sm:flex items-center shrink-0">
-          <img
-            src="/manutamaki-logo.svg"
-            alt="Manutamaki - Unidade Industrial Almoxarifado Manutenção"
-            width={380}
-            height={94}
-            className="h-14 lg:h-16 w-auto object-contain transition-transform hover:scale-[1.02]"
-          />
+        {/* Industrial Plant Official Badge */}
+        <div className="flex items-center self-start md:self-center shrink-0">
+          <ManutamakiBadge size="md" className="hidden sm:inline-flex" />
+          <ManutamakiBadge size="sm" className="inline-flex sm:hidden" />
         </div>
       </div>
     </header>

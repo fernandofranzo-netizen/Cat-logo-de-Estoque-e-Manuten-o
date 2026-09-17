@@ -5,24 +5,20 @@ import {
   Check,
   Plus,
   Eye,
-  Bookmark,
   MapPin,
 } from 'lucide-react';
 
 interface ItemTableViewProps {
   items: StockItem[];
   onOpenDetails: (item: StockItem) => void;
-  onAddToRequisition: (item: StockItem, qty: number) => void;
-  bookmarkedIds: Set<string>;
-  onToggleBookmark: (id: string) => void;
+  onAddToRequisition?: (item: StockItem, qty: number) => void;
+  bookmarkedIds?: Set<string>;
+  onToggleBookmark?: (id: string) => void;
 }
 
 export const ItemTableView: React.FC<ItemTableViewProps> = ({
   items,
   onOpenDetails,
-  onAddToRequisition,
-  bookmarkedIds,
-  onToggleBookmark,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -43,7 +39,6 @@ export const ItemTableView: React.FC<ItemTableViewProps> = ({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="bg-slate-900 text-slate-300 font-mono text-[11px] uppercase tracking-wider border-b border-slate-800">
-              <th className="py-3 px-3 w-10 text-center">Fav</th>
               <th className="py-3 px-4">Código Oficial</th>
               <th className="py-3 px-4">Descrição do Item</th>
               <th className="py-3 px-3">Categoria / Sub</th>
@@ -54,7 +49,6 @@ export const ItemTableView: React.FC<ItemTableViewProps> = ({
           </thead>
           <tbody className="divide-y divide-slate-100 font-sans">
             {items.map((item) => {
-              const isFav = bookmarkedIds.has(item.id);
               const isCopied = copiedId === item.id;
 
               return (
@@ -63,18 +57,6 @@ export const ItemTableView: React.FC<ItemTableViewProps> = ({
                   onClick={() => onOpenDetails(item)}
                   className="hover:bg-sky-50/50 cursor-pointer transition-colors group"
                 >
-                  {/* Bookmark */}
-                  <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => onToggleBookmark(item.id)}
-                      className={`p-1 rounded transition-colors ${
-                        isFav ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'
-                      }`}
-                    >
-                      <Bookmark className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
-                    </button>
-                  </td>
-
                   {/* Code */}
                   <td className="py-2.5 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">
                     <div className="flex items-center gap-1.5">
@@ -130,22 +112,14 @@ export const ItemTableView: React.FC<ItemTableViewProps> = ({
 
                   {/* Actions */}
                   <td className="py-2.5 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end">
                       <button
                         onClick={() => onOpenDetails(item)}
-                        className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-slate-100 rounded transition-colors"
+                        className="flex items-center gap-1.5 px-2.5 py-1 text-slate-600 hover:text-sky-700 hover:bg-sky-50 rounded-lg text-xs font-semibold transition-colors border border-slate-200"
                         title="Ver Ficha Técnica"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        onClick={() => onAddToRequisition(item, 1)}
-                        className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-sky-600 hover:text-white text-slate-700 rounded text-[11px] font-semibold transition-colors"
-                        title="Adicionar à requisição"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Requisitar</span>
+                        <Eye className="w-3.5 h-3.5 text-sky-600" />
+                        <span>Ficha Técnica</span>
                       </button>
                     </div>
                   </td>

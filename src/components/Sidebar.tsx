@@ -16,7 +16,6 @@ import {
   LogOut,
   LogIn,
   X,
-  FileSpreadsheet,
   SlidersHorizontal,
 } from 'lucide-react';
 
@@ -27,8 +26,8 @@ interface SidebarProps {
   selectedGroup: string;
   onSelectGroup: (grp: string) => void;
   onOpenAdmin: () => void;
-  onOpenRequisitions: () => void;
-  requisitionsCount: number;
+  onOpenRequisitions?: () => void;
+  requisitionsCount?: number;
   isAuthenticated: boolean;
   userEmail?: string | null;
   onLogin: () => void;
@@ -49,8 +48,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedGroup,
   onSelectGroup,
   onOpenAdmin,
-  onOpenRequisitions,
-  requisitionsCount,
   isAuthenticated,
   userEmail,
   onLogin,
@@ -187,23 +184,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 {items.length}
               </span>
-            </button>
-
-            <button
-              onClick={onOpenRequisitions}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-slate-300 hover:bg-slate-800/60 hover:text-white transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <FileSpreadsheet className="w-4 h-4 text-sky-400 opacity-90" />
-                <span>Lista de Requisições</span>
-              </div>
-              {requisitionsCount > 0 ? (
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-                  {requisitionsCount}
-                </span>
-              ) : (
-                <span className="text-[10px] font-mono px-1.5 text-slate-500">0</span>
-              )}
             </button>
           </div>
         </div>

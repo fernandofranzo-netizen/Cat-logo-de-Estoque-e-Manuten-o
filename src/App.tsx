@@ -385,8 +385,6 @@ export default function App() {
           setCurrentPage(1);
         }}
         onOpenAdmin={handleOpenAdmin}
-        onOpenRequisitions={() => setIsRequisitionsOpen(true)}
-        requisitionsCount={requisitions.length}
         isAuthenticated={isAuthenticated}
         userEmail={user?.email}
         onLogin={handleGoogleLogin}
@@ -603,16 +601,6 @@ export default function App() {
         </main>
       </div>
       )}
-
-      {/* Requisition Basket Drawer */}
-      <RequisitionDrawer
-        isOpen={isRequisitionsOpen}
-        onClose={() => setIsRequisitionsOpen(false)}
-        items={requisitions}
-        onUpdateQty={handleUpdateRequisitionQty}
-        onRemoveItem={handleRemoveRequisition}
-        onClearAll={handleClearRequisitions}
-      />
 
       {/* Admin / PIN Config Modal */}
       <AdminModal
