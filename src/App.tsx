@@ -24,6 +24,7 @@ import { RequisitionDrawer } from './components/RequisitionDrawer';
 import { AdminModal } from './components/AdminModal';
 import { AdminView } from './components/AdminView';
 import { PinModal } from './components/PinModal';
+import { preloadDriveFolderIndex } from './services/driveImages';
 
 import {
   Search,
@@ -50,7 +51,7 @@ export default function App() {
   const [config, setConfig] = useState<SyncConfig>(() => ({
     webAppUrl: DEFAULT_WEB_APP_URL,
     spreadsheetId: SPREADSHEET_DEFAULT_ID,
-    autoSyncIntervalMs: 30000, // 30 seconds real-time polling
+    autoSyncIntervalMs: 0, // Manual sync by default to prevent continuous background polling
     lastSyncTime: new Date(),
   }));
 
@@ -133,6 +134,11 @@ export default function App() {
     }
   }, [bookmarkedIds]);
 
+  // Preload Drive images index
+  useEffect(() => {
+    preloadDriveFolderIndex();
+  }, []);
+
   // Initialize Firebase Auth listener
   useEffect(() => {
     const unsubscribe = initAuth(
@@ -170,7 +176,11 @@ export default function App() {
 
       // If Sheets API didn't return or not configured, use Web App bridge URL
       if (!updatedItems || updatedItems.length === 0) {
-        updatedItems = await fetchFromGoogleAppsScript(config.webAppUrl);
+        try {
+          updatedItems = await fetchFromGoogleAppsScript(config.webAppUrl);
+        } catch (scriptErr) {
+          console.warn('Google Apps Script bridge response notice:', scriptErr);
+        }
       }
 
       if (updatedItems && updatedItems.length > 0) {
@@ -178,12 +188,13 @@ export default function App() {
         setSyncStatus('synced');
         setLastSyncTime(new Date());
       } else {
-        setSyncStatus('error');
-        setSyncErrorMsg('Nenhum item retornado na sincronização.');
+        // Keep existing catalog loaded and inform user
+        setSyncStatus('idle');
+        setSyncErrorMsg('Sincronização remota indisponível no momento. O catálogo local continua ativo.');
       }
     } catch (err: unknown) {
-      console.error('Synchronization failed:', err);
-      setSyncStatus('error');
+      console.warn('Synchronization notice:', err);
+      setSyncStatus('idle');
       const message = err instanceof Error ? err.message : 'Falha na conexão com Google Sheets';
       setSyncErrorMsg(message);
     } finally {

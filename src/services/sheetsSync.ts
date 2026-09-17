@@ -81,8 +81,16 @@ export function getInitialStockItems(): StockItem[] {
 }
 
 export async function fetchFromGoogleAppsScript(webAppUrl: string = DEFAULT_WEB_APP_URL): Promise<StockItem[]> {
+  if (!webAppUrl) return [];
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const timeoutId = setTimeout(() => {
+    try {
+      controller.abort(new DOMException('Tempo limite de conexão excedido ao acessar Google Apps Script', 'TimeoutError'));
+    } catch {
+      controller.abort();
+    }
+  }, 12000);
 
   try {
     const response = await fetch(webAppUrl, {
@@ -118,9 +126,9 @@ export async function fetchFromGoogleAppsScript(webAppUrl: string = DEFAULT_WEB_
     return rows
       .filter(isValidStockRow)
       .map((row, idx) => parseRawRow(row, idx));
-  } catch (error) {
+  } catch (error: unknown) {
     clearTimeout(timeoutId);
-    console.error('Sheets sync error:', error);
+    console.warn('Sheets sync connection notice:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }

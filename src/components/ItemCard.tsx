@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { StockItem } from '../types';
-import { TechnicalSchematic } from './TechnicalSchematic';
+import { RealisticItemVisual } from './RealisticItemVisual';
 import {
   Copy,
   Check,
-  Plus,
-  FileText,
-  MapPin,
-  Bookmark,
-  Share2,
+  Heart,
+  ArrowRight,
 } from 'lucide-react';
 
 interface ItemCardProps {
@@ -19,10 +16,26 @@ interface ItemCardProps {
   onToggleBookmark: (itemId: string) => void;
 }
 
+// Format category names with proper Portuguese orthography
+function formatCategoryName(cat: string): string {
+  if (!cat) return '';
+  const upper = cat.toUpperCase().trim();
+  if (upper.includes('MATERIAL AUXILIAR')) return 'MATERIAL AUXILIAR DE PRODUÇÃO';
+  if (upper.includes('CONSUMO MANUTENCAO') || upper.includes('CONSUMO MANUTENÇÃO')) return 'CONSUMO MANUTENÇÃO';
+  if (upper.includes('CONSUMO GERAL')) return 'CONSUMO GERAL';
+  if (upper.includes('MECANICO') || upper.includes('MECÂNICO')) return 'MATERIAL MECÂNICO';
+  if (upper.includes('ELETRICO') || upper.includes('ELÉTRICO')) return 'MATERIAL ELÉTRICO';
+  if (upper.includes('SEGURANCA') || upper.includes('SEGURANÇA')) return 'MATERIAIS DE SEGURANÇA';
+  if (upper.includes('LIMPEZA')) return 'MATERIAIS DE LIMPEZA';
+  if (upper.includes('ESCRITORIO') || upper.includes('ESCRITÓRIO')) return 'MATERIAIS DE ESCRITÓRIO';
+  if (upper.includes('EMBALAGEN') || upper.includes('EMBALAGEM')) return 'MATERIAL DE EMBALAGENS';
+  return upper;
+}
+
 export const ItemCard: React.FC<ItemCardProps> = ({
   item,
   onOpenDetails,
-  onAddToRequisition,
+  onAddToRequisition: _onAddToRequisition,
   isBookmarked,
   onToggleBookmark,
 }) => {
@@ -33,15 +46,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     try {
       await navigator.clipboard.writeText(item.codigo);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       // fallback
     }
-  };
-
-  const handleAdd = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onAddToRequisition(item, 1);
   };
 
   const handleBookmark = (e: React.MouseEvent) => {
@@ -49,11 +57,34 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     onToggleBookmark(item.id);
   };
 
+  // Format category
+  const categoryFormatted = formatCategoryName(item.categoria);
+
   // Format dimensions extract
   const extractDimensions = () => {
-    const d = item.descricao;
-    const match = d.match(/(\d+[,.]?\d*\s*[Xx]\s*\d+[,.]?\d*(\s*[Xx]\s*\d+[,.]?\d*)?\s*(MM|M|G)?)/i);
-    if (match) return match[0];
+    const desc = item.descricao.toUpperCase();
+
+    const mmMatch2 = desc.match(/(\d+[.,]?\d*)\s+(\d+[.,]?\d*)\s*MM/);
+    if (mmMatch2) {
+      return `${mmMatch2[1]} X ${mmMatch2[2]} MM`;
+    }
+
+    const xMatch = desc.match(/(\d+[.,]?\d*)\s*X\s*(\d+[.,]?\d*)\s*(?:X\s*(\d+[.,]?\d*))?\s*MM?/);
+    if (xMatch) {
+      const parts = [xMatch[1], xMatch[2], xMatch[3]].filter(Boolean);
+      return `${parts.join(' X ')} MM`;
+    }
+
+    const singleMatch = desc.match(/(?:D-|M-)?(\d+[.,]?\d*)\s*MM/);
+    if (singleMatch) {
+      return `${singleMatch[1]} MM`;
+    }
+
+    const inchMatch = desc.match(/(\d+\/\d+)"?/);
+    if (inchMatch) {
+      return `${inchMatch[1]}"`;
+    }
+
     if (item.descricaoExtra) return item.descricaoExtra;
     return null;
   };
@@ -63,98 +94,121 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   return (
     <div
       onClick={() => onOpenDetails(item)}
-      className="group relative bg-white rounded-xl border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer"
+      className="group relative bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col p-4 cursor-pointer justify-between space-y-3.5"
     >
-      {/* CAD Schematic Header with Top Action Icons */}
-      <div className="relative w-full h-44 bg-slate-50 border-b border-slate-100">
-        <TechnicalSchematic
-          codigo={item.codigo}
-          subCategoria={item.subCategoria}
-          categoria={item.categoria}
-          descricao={item.descricao}
-          className="w-full h-full"
-        />
+      {/* Visual Reference Frame with Top Action Icons */}
+      <div className="relative w-full aspect-[4/3] bg-[#fafafa] rounded-xl border border-slate-200/70 overflow-hidden flex items-center justify-center p-3 select-none">
+        {/* Realistic CAD / Visual Component */}
+        <div className="w-full h-full flex items-center justify-center">
+          <RealisticItemVisual
+            codigo={item.codigo}
+            subCategoria={item.subCategoria}
+            descricao={item.descricao}
+            className="max-w-[180px] max-h-[180px]"
+          />
+        </div>
 
-        {/* Floating Quick Action Icons */}
-        <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
+        {/* Top-Right Action Icons Matching Screenshot */}
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-20">
           <button
             onClick={handleCopyCode}
-            className="p-1.5 rounded-md bg-white/90 hover:bg-white text-slate-500 hover:text-sky-700 border border-slate-200/80 shadow-xs transition-colors"
-            title="Copiar código do item"
+            className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-slate-400 hover:text-slate-800 border border-slate-200/80 shadow-2xs transition-colors cursor-pointer"
+            title="Copiar código"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-emerald-600" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
           </button>
 
           <button
             onClick={handleBookmark}
-            className={`p-1.5 rounded-md border shadow-xs transition-colors ${
+            className={`p-1.5 rounded-lg border shadow-2xs transition-colors cursor-pointer ${
               isBookmarked
-                ? 'bg-amber-500 text-white border-amber-600'
-                : 'bg-white/90 hover:bg-white text-slate-400 hover:text-amber-500 border-slate-200/80'
+                ? 'bg-rose-50 border-rose-200 text-rose-500'
+                : 'bg-white/90 hover:bg-white text-slate-300 hover:text-rose-500 border-slate-200/80'
             }`}
             title={isBookmarked ? 'Remover dos favoritos' : 'Favoritar item'}
           >
-            <Bookmark className="w-3.5 h-3.5 fill-current" />
+            <Heart className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-current' : ''}`} />
           </button>
         </div>
+
+        {/* Bottom-Left Reference Label */}
+        <span className="absolute bottom-2.5 left-3 text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">
+          VISTA DE REFERÊNCIA
+        </span>
       </div>
 
-      {/* Card Content */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-        {/* Category & Subcategory Tags */}
-        <div>
+      {/* Card Information Body */}
+      <div className="space-y-2 flex-1 flex flex-col justify-between">
+        <div className="space-y-2">
+          {/* Category Tag */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">
-              {item.categoria}
-            </span>
-            <span className="text-[10px] font-medium uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-              {item.subCategoria}
+            <span className="inline-flex items-center px-2 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-800 font-mono text-[10px] font-semibold tracking-wide uppercase">
+              {categoryFormatted}
             </span>
           </div>
 
-          {/* Official Code */}
-          <div className="flex items-center justify-between mt-2.5">
-            <h3 className="text-sm font-mono font-bold text-slate-900 tracking-tight group-hover:text-sky-700 transition-colors">
-              {item.codigo}
-            </h3>
-            {copied && (
-              <span className="text-[10px] font-mono font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                Copiado!
-              </span>
-            )}
-          </div>
+          {/* Code */}
+          <h3 className="text-base font-mono font-black text-slate-900 tracking-tight group-hover:text-sky-800 transition-colors">
+            {item.codigo}
+          </h3>
 
           {/* Description */}
-          <p className="text-xs text-slate-700 font-semibold mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-xs font-bold text-slate-700 uppercase line-clamp-2 leading-relaxed">
             {item.descricao}
           </p>
 
-          {/* Extra Dimension Spec */}
+          {/* Dimension Spec */}
           {dimensionText && (
-            <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500 mt-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400 pt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block" />
               <span>{dimensionText}</span>
             </div>
           )}
         </div>
 
-        {/* Card Footer with Location and Requisition Button */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate" title={item.localizacao}>
-            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-            <span className="truncate">{item.localizacao}</span>
-          </div>
-
+        {/* Bottom Action Buttons Row Matching Reference Image */}
+        <div className="flex items-center gap-2 pt-2">
+          {/* COPIAR CÓDIGO Button */}
           <button
-            onClick={handleAdd}
-            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 hover:bg-sky-600 hover:text-white text-slate-700 font-semibold text-[11px] transition-colors"
-            title="Adicionar à requisição"
+            onClick={handleCopyCode}
+            className={`flex-1 flex items-center justify-center gap-2 font-mono font-bold text-xs py-2.5 px-4 rounded-xl border shadow-2xs transition-all cursor-pointer ${
+              copied
+                ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                : 'bg-[#fef3c7] hover:bg-[#fde68a] text-[#92400e] border-[#fcd34d]'
+            }`}
+            title="Copiar código do item"
           >
-            <Plus className="w-3 h-3" />
-            <span>Requisitar</span>
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-700" />
+                <span>CÓDIGO COPIADO!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-[#b45309]" />
+                <span>COPIAR CÓDIGO</span>
+              </>
+            )}
+          </button>
+
+          {/* Arrow / Open Details Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDetails(item);
+            }}
+            className="w-10 h-10 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 flex items-center justify-center shrink-0 shadow-2xs transition-all cursor-pointer"
+            title="Ver detalhes do item"
+          >
+            <ArrowRight className="w-4 h-4 text-slate-600" />
           </button>
         </div>
       </div>
     </div>
   );
 };
+
