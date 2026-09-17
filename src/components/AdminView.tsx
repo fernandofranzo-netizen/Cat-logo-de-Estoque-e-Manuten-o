@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { StockItem, SyncConfig } from '../types';
 import { TechnicalSchematic } from './TechnicalSchematic';
+import { generateInventoryReportPdf } from '../utils/pdfGenerator';
 import {
   ArrowLeft,
   Plus,
   Upload,
   Download,
+  Printer,
   LogOut,
   Search,
-  Camera,
   FileEdit,
   ExternalLink,
   Layers,
@@ -237,33 +238,21 @@ export const AdminView: React.FC<AdminViewProps> = ({
           </p>
         </div>
 
-        {/* Top Action Buttons Matching Image Exactly */}
+        {/* Top Action Buttons - Imprimir Relatório (.PDF) */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* + + NOVO ITEM */}
+          {/* IMPRIMIR RELATÓRIO (.PDF) */}
           <button
-            onClick={() => setIsNewItemModalOpen(true)}
-            className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl text-xs font-mono flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            onClick={() =>
+              generateInventoryReportPdf(
+                filteredTableItems.length > 0 && tableSearch.trim() ? filteredTableItems : items,
+                tableSearch.trim() ? tableSearch.trim() : undefined
+              )
+            }
+            className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs font-mono flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+            title="Gerar e salvar relatório de inventário completo em PDF"
           >
-            <span className="text-sm font-black">+ +</span>
-            <span>NOVO ITEM</span>
-          </button>
-
-          {/* IMPORTAR (.XLSX/.PDF) */}
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-2.5 px-3.5 rounded-xl text-xs font-mono flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-          >
-            <Upload className="w-3.5 h-3.5 text-slate-500" />
-            <span>IMPORTAR (.XLSX/.PDF)</span>
-          </button>
-
-          {/* EXPORTAR */}
-          <button
-            onClick={handleExportCSV}
-            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-2.5 px-3.5 rounded-xl text-xs font-mono flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 text-slate-500" />
-            <span>EXPORTAR</span>
+            <Printer className="w-3.5 h-3.5 text-sky-400" />
+            <span>IMPRIMIR RELATÓRIO (.PDF)</span>
           </button>
 
           {/* SAIR DO GESTOR */}
@@ -339,21 +328,37 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </p>
             </div>
 
-            {/* Table Search Input */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <Search className="w-3.5 h-3.5" />
+            {/* Table Search Input & Print */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Search className="w-3.5 h-3.5" />
+                </div>
+                <input
+                  type="text"
+                  value={tableSearch}
+                  onChange={(e) => {
+                    setTableSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Filtrar tabela..."
+                  className="pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 w-full sm:w-60 shadow-2xs transition-all font-sans"
+                />
               </div>
-              <input
-                type="text"
-                value={tableSearch}
-                onChange={(e) => {
-                  setTableSearch(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Filtrar tabela..."
-                className="pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 w-full sm:w-60 shadow-2xs transition-all font-sans"
-              />
+
+              <button
+                onClick={() =>
+                  generateInventoryReportPdf(
+                    filteredTableItems.length > 0 && tableSearch.trim() ? filteredTableItems : items,
+                    tableSearch.trim() ? tableSearch.trim() : undefined
+                  )
+                }
+                className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-1.5 px-3 rounded-xl text-xs font-mono flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer shrink-0"
+                title="Imprimir relatório de inventário em PDF"
+              >
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
+                <span>Imprimir (.PDF)</span>
+              </button>
             </div>
           </div>
 
@@ -366,7 +371,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   <th className="py-3 px-4 w-44">CÓDIGO</th>
                   <th className="py-3 px-4">DESCRIÇÃO</th>
                   <th className="py-3 px-4 w-60">CATEGORIA</th>
-                  <th className="py-3 px-4 w-20 text-right">AÇÕES</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -413,32 +417,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         </div>
                       </div>
                     </td>
-
-                    {/* AÇÕES column */}
-                    <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5 text-slate-400">
-                        <button
-                          onClick={() => onSelectItemForDetail(item)}
-                          className="p-1 hover:text-sky-600 rounded hover:bg-slate-100 transition-colors"
-                          title="Visualizar CAD e detalhes"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          className="p-1 hover:text-amber-600 rounded hover:bg-slate-100 transition-colors"
-                          title="Editar item"
-                        >
-                          <FileEdit className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
                   </tr>
                 ))}
 
                 {currentTableItems.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-400">
+                    <td colSpan={4} className="py-12 text-center text-slate-400">
                       Nenhum registro encontrado para "{tableSearch}".
                     </td>
                   </tr>

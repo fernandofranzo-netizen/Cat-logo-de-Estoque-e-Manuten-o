@@ -321,3 +321,205 @@ export function generateDatasheetPdf(
   // Save/Download the file in .pdf format
   doc.save(filename);
 }
+
+/**
+ * Generates and downloads a complete, professional Inventory and Stock PDF Report
+ * for Manutamaki Almoxarifado Industrial.
+ */
+export function generateInventoryReportPdf(
+  items: StockItem[],
+  filterTitle?: string
+): void {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 14;
+  const contentWidth = pageWidth - margin * 2; // 182mm
+  let currentY = margin;
+
+  // Colors
+  const primaryDark = [15, 23, 42]; // Slate 900
+  const primaryBlue = [14, 116, 144]; // Cyan/Teal 700
+  const bgHeader = [241, 245, 249]; // Slate 100
+  const borderLight = [226, 232, 240]; // Slate 200
+  const textDark = [30, 41, 59]; // Slate 800
+  const textMuted = [100, 116, 139]; // Slate 500
+
+  // Column widths: sum = 32 + 62 + 42 + 32 + 14 = 182mm
+  const colW = [32, 62, 42, 32, 14];
+
+  // Helper to draw mini table header when a new page begins
+  const drawTableHeader = () => {
+    doc.setFillColor(bgHeader[0], bgHeader[1], bgHeader[2]);
+    doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+    doc.rect(margin, currentY, contentWidth, 6.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(primaryDark[0], primaryDark[1], primaryDark[2]);
+
+    doc.text('CÓDIGO', margin + 2, currentY + 4.5);
+    doc.text('DESCRIÇÃO TÉCNICA', margin + colW[0] + 2, currentY + 4.5);
+    doc.text('CATEGORIA / SUB', margin + colW[0] + colW[1] + 2, currentY + 4.5);
+    doc.text('LOCALIZAÇÃO', margin + colW[0] + colW[1] + colW[2] + 2, currentY + 4.5);
+    doc.text('UNID', margin + colW[0] + colW[1] + colW[2] + colW[3] + 2, currentY + 4.5);
+
+    currentY += 6.5;
+  };
+
+  const drawPageHeader = (isFirstPage: boolean) => {
+    if (isFirstPage) {
+      // Main header box
+      doc.setFillColor(primaryDark[0], primaryDark[1], primaryDark[2]);
+      doc.roundedRect(margin, currentY, contentWidth, 24, 2, 2, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(255, 255, 255);
+      doc.text('MANUTAMAKI INDUSTRIAL', margin + 6, currentY + 8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184); // Slate 400
+      doc.text('ALMOXARIFADO TÉCNICO // RELATÓRIO GERAL DE INVENTÁRIO & ESTOQUE MRO', margin + 6, currentY + 14);
+
+      const emitDate = new Date().toLocaleDateString('pt-BR');
+      const emitTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      doc.text(`EMISSÃO: ${emitDate} às ${emitTime} • TOTAL DE REGISTROS: ${items.length}`, margin + 6, currentY + 19);
+
+      // Status pill on top right
+      const pillW = 44;
+      const pillX = pageWidth - margin - pillW - 6;
+      doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+      doc.roundedRect(pillX, currentY + 6, pillW, 7, 1.5, 1.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text('RELATÓRIO OFICIAL', pillX + pillW / 2, currentY + 10.5, { align: 'center' });
+
+      currentY += 28;
+
+      // Summary Info Bar
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+      doc.roundedRect(margin, currentY, contentWidth, 9, 1.5, 1.5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(primaryDark[0], primaryDark[1], primaryDark[2]);
+      const summaryText = filterTitle 
+        ? `FILTRO APLICADO: "${filterTitle}" — ${items.length} itens listados`
+        : `INVENTÁRIO COMPLETO — ${items.length} itens cadastrados no almoxarifado`;
+      doc.text(summaryText, margin + 4, currentY + 5.8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+      doc.text('Manutamaki MRO Management System', pageWidth - margin - 4, currentY + 5.8, { align: 'right' });
+
+      currentY += 13;
+    } else {
+      // Small running top header on pages 2+
+      doc.setFillColor(primaryDark[0], primaryDark[1], primaryDark[2]);
+      doc.rect(margin, currentY, contentWidth, 7, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text('MANUTAMAKI // RELATÓRIO DE INVENTÁRIO (CONTINUAÇÃO)', margin + 3, currentY + 4.8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(203, 213, 225);
+      doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - margin - 3, currentY + 4.8, { align: 'right' });
+
+      currentY += 9;
+    }
+
+    drawTableHeader();
+  };
+
+  // Draw first page header & table header
+  drawPageHeader(true);
+
+  // Print all rows
+  items.forEach((item, index) => {
+    // Check if row needs page break (each row ~6.8mm)
+    if (currentY + 8 > pageHeight - 16) {
+      doc.addPage();
+      currentY = margin;
+      drawPageHeader(false);
+    }
+
+    // Zebra striping background
+    if (index % 2 === 1) {
+      doc.setFillColor(248, 250, 252); // Slate 50
+      doc.rect(margin, currentY, contentWidth, 6.8, 'F');
+    }
+
+    doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+    doc.line(margin, currentY + 6.8, margin + contentWidth, currentY + 6.8);
+
+    // 1. Código
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(primaryDark[0], primaryDark[1], primaryDark[2]);
+    const codText = doc.splitTextToSize(item.codigo, colW[0] - 3);
+    doc.text(codText[0] || item.codigo, margin + 2, currentY + 4.5);
+
+    // 2. Descrição
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+    const descText = doc.splitTextToSize(item.descricao, colW[1] - 3);
+    doc.text(descText[0] || item.descricao, margin + colW[0] + 2, currentY + 4.5);
+
+    // 3. Categoria / Sub
+    doc.setFontSize(6.5);
+    doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+    const catText = `${item.categoria || ''}${item.subCategoria ? ' / ' + item.subCategoria : ''}`;
+    const splitCat = doc.splitTextToSize(catText, colW[2] - 3);
+    doc.text(splitCat[0] || catText, margin + colW[0] + colW[1] + 2, currentY + 4.5);
+
+    // 4. Localização (Rua - Prat - Gav)
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(textDark[0], textDark[1], textDark[2]);
+    const locText = item.rua || item.prateleira || item.gaveta
+      ? `Rua ${item.rua || '-'} • P. ${item.prateleira || '-'} • G. ${item.gaveta || '-'}`
+      : (item.localizacao || 'Almoxarifado');
+    const splitLoc = doc.splitTextToSize(locText, colW[3] - 3);
+    doc.text(splitLoc[0] || locText, margin + colW[0] + colW[1] + colW[2] + 2, currentY + 4.5);
+
+    // 5. Unidade
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text(item.unidade || 'UN', margin + colW[0] + colW[1] + colW[2] + colW[3] + 2, currentY + 4.5);
+
+    currentY += 6.8;
+  });
+
+  // Footer on all pages
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setDrawColor(borderLight[0], borderLight[1], borderLight[2]);
+    doc.line(margin, pageHeight - 11, margin + contentWidth, pageHeight - 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+    doc.text('MANUTAMAKI // ALMOXARIFADO TÉCNICO - RELATÓRIO OFICIAL DE INVENTÁRIO', margin, pageHeight - 6.5);
+    doc.text(`Página ${p} de ${totalPages}`, pageWidth - margin, pageHeight - 6.5, { align: 'right' });
+  }
+
+  // File download
+  const dateStr = new Date().toISOString().slice(0, 10);
+  doc.save(`Relatorio_Inventario_Manutamaki_${dateStr}.pdf`);
+}
