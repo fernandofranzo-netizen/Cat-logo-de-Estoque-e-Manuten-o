@@ -315,16 +315,6 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
 
         {/* Top Right Action Buttons Exactly Matching Image */}
         <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          {/* DATA-SHEET / DOCS */}
-          <button
-            onClick={() => setIsDatasheetModalOpen(true)}
-            className="bg-white hover:bg-teal-50 text-teal-700 border border-teal-300 font-mono font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-2xs transition-all cursor-pointer group"
-          >
-            <FileText className="w-4 h-4 text-teal-600 group-hover:scale-110 transition-transform" />
-            <span>DATA-SHEET / DOCS</span>
-            <Sparkles className="w-3 h-3 text-teal-500" />
-          </button>
-
           {/* COPIAR CÓDIGO */}
           <button
             onClick={handleCopyCode}
