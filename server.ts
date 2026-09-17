@@ -83,6 +83,7 @@ app.get("/api/drive-image", async (req, res) => {
       // Find the best match starting with or containing the item code
       const file = files[0];
       const fileId = file.id!;
+      // Renderização direta via googleusercontent.com (substitui o formato legado /uc?export=view&id=...)
       const directUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
       const proxyUrl = `/api/drive-stream/${fileId}`;
 

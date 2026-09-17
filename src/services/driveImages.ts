@@ -21,6 +21,39 @@ let folderIndexPromise: Promise<Record<string, string>> | null = null;
 const folderIndex: Record<string, string> = {};
 
 /**
+ * Converte qualquer formato legado do Google Drive (como /uc?export=view&id=...)
+ * para a renderização direta oficial via googleusercontent.com
+ */
+export function formatGoogleDriveDirectUrl(rawUrlOrId: string): string {
+  if (!rawUrlOrId) return '';
+  const trimmed = rawUrlOrId.trim();
+
+  // Já no formato direto de alta performance
+  if (trimmed.includes('googleusercontent.com/d/')) {
+    return trimmed;
+  }
+
+  // Se vier com o parâmetro legado /uc?export=view&id=XYZ ou ?id=XYZ
+  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idMatch) {
+    return `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+  }
+
+  // Se vier no formato drive.google.com/file/d/XYZ/...
+  const dMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (dMatch) {
+    return `https://lh3.googleusercontent.com/d/${dMatch[1]}`;
+  }
+
+  // Se for diretamente o fileId
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
+    return `https://lh3.googleusercontent.com/d/${trimmed}`;
+  }
+
+  return trimmed;
+}
+
+/**
  * Normalizes an item code for index lookup (removes special chars, trims, uppercase)
  */
 function normalizeCode(code: string): string {
@@ -41,7 +74,7 @@ export async function preloadDriveFolderIndex(): Promise<Record<string, string>>
       const data = await res.json();
       if (data.available && data.images) {
         Object.entries(data.images).forEach(([key, val]: [string, any]) => {
-          const directUrl = typeof val === 'string' ? val : val.imageUrl;
+          const directUrl = formatGoogleDriveDirectUrl(typeof val === 'string' ? val : val.imageUrl);
           folderIndex[normalizeCode(key)] = directUrl;
         });
         folderIndexLoaded = true;
@@ -95,8 +128,9 @@ export async function getDriveImageForCode(code: string): Promise<string | null>
       }
       const data: DriveImageResponse = await res.json();
       if (data.found && data.imageUrl) {
-        imageCache.set(norm, data.imageUrl);
-        return data.imageUrl;
+        const directUrl = formatGoogleDriveDirectUrl(data.imageUrl);
+        imageCache.set(norm, directUrl);
+        return directUrl;
       } else {
         imageCache.set(norm, null);
         return null;

@@ -21,14 +21,23 @@ export const RealisticItemVisual: React.FC<RealisticItemVisualProps> = ({
   // If a dynamic image was found on Google Drive and loaded cleanly, render it
   if (hasDriveImage && imageUrl && !imgError) {
     return (
-      <div className={`w-full h-full flex items-center justify-center p-2 relative overflow-hidden ${className}`}>
+      <div className={`w-full h-full min-w-full min-h-full flex items-center justify-center p-2 relative overflow-hidden ${className}`}>
         <img
           src={imageUrl}
           alt={`${codigo} - ${descricao}`}
+          width={400}
+          height={300}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full max-w-full max-h-full object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105 block"
+          style={{
+            width: '100%',
+            height: '100%',
+            minHeight: '120px',
+            objectFit: 'contain',
+            display: 'block',
+          }}
           onError={() => setImgError(true)}
-          loading="lazy"
+          loading="eager"
         />
       </div>
     );
