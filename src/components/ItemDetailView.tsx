@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import { StockItem, DatasheetResult, GroundingSource } from '../types';
+import { requestItemDatasheet } from '../services/datasheetService';
 import { RealisticItemVisual } from './RealisticItemVisual';
 import { DatasheetViewer } from './DatasheetViewer';
 import {
@@ -75,42 +76,17 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
   const [datasheetCopied, setDatasheetCopied] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
-  // Fetch or generate datasheet via Google Grounding
+  // Fetch or generate datasheet via Google Grounding or engineering fallback
   const loadDatasheet = useCallback(async (forceRefresh = false) => {
     setDatasheetLoading(true);
     setDatasheetError(null);
     try {
-      const res = await fetch('/api/datasheet/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: item.codigo,
-          descricao: item.descricao,
-          categoria: item.categoria,
-          subCategoria: item.subCategoria,
-          localizacao: item.localizacao || item.localizacaoCompleta,
-          forceRefresh,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        if (json.needsApiKey) {
-          setDatasheetError(
-            'A chave GEMINI_API_KEY não foi configurada no painel de Secrets. Adicione a chave para habilitar a consulta automática do Google Grounding.'
-          );
-        } else {
-          setDatasheetError(json.error || 'Erro ao gerar o data-sheet através do Google Grounding.');
-        }
-        setDatasheetData(null);
+      const res = await requestItemDatasheet(item, forceRefresh);
+      if (res.success && res.data) {
+        setDatasheetData(res.data);
       } else {
-        setDatasheetData({
-          code: json.code || item.codigo,
-          markdown: json.markdown,
-          sources: json.sources || [],
-          generatedAt: json.generatedAt || new Date().toISOString(),
-          fromCache: json.fromCache,
-        });
+        setDatasheetError(res.error || 'Erro ao obter a ficha técnica do item.');
+        setDatasheetData(null);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

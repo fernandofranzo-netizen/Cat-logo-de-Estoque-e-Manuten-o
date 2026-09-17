@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import { StockItem, DatasheetResult, GroundingSource } from '../types';
+import { requestItemDatasheet } from '../services/datasheetService';
 import {
   FileText,
   Download,
@@ -31,42 +32,17 @@ export const DatasheetViewer: React.FC<DatasheetViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Fetch or generate datasheet via Google Grounding
+  // Fetch or generate datasheet via Google Grounding or engineering fallback
   const fetchDatasheet = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/datasheet/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: item.codigo,
-          descricao: item.descricao,
-          categoria: item.categoria,
-          subCategoria: item.subCategoria,
-          localizacao: item.localizacao || item.localizacaoCompleta,
-          forceRefresh,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        if (json.needsApiKey) {
-          setError(
-            'A chave GEMINI_API_KEY não foi configurada. Acesse o menu Settings > Secrets para adicionar sua chave e habilitar a busca automática com Google Grounding.'
-          );
-        } else {
-          setError(json.error || 'Erro ao gerar o data-sheet através do Google Grounding.');
-        }
-        setData(null);
+      const res = await requestItemDatasheet(item, forceRefresh);
+      if (res.success && res.data) {
+        setData(res.data);
       } else {
-        setData({
-          code: json.code || item.codigo,
-          markdown: json.markdown,
-          sources: json.sources || [],
-          generatedAt: json.generatedAt || new Date().toISOString(),
-          fromCache: json.fromCache,
-        });
+        setError(res.error || 'Erro ao gerar o data-sheet técnico.');
+        setData(null);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

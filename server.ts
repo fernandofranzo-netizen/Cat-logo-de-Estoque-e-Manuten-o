@@ -320,6 +320,9 @@ app.post("/api/datasheet/generate", async (req, res) => {
 
   const ai = getGenAI();
   if (!ai) {
+    console.warn(
+      "[DATA-SHEET API] AVISO: A variável de ambiente GEMINI_API_KEY não está configurada no ambiente. Utilizando síntese de engenharia homologada como contingência."
+    );
     // If no key configured, provide synthesized engineering datasheet
     const synth = generateSynthesizedDatasheet(itemCode, itemDesc, categoria, subCategoria, localizacao);
     const generatedAt = new Date().toISOString();
