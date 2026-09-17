@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import { StockItem, DatasheetResult, GroundingSource } from '../types';
 import { requestItemDatasheet } from '../services/datasheetService';
+import { parseItemTechnicalDimensions } from '../utils/technicalDimensions';
 import { RealisticItemVisual } from './RealisticItemVisual';
 import { DatasheetViewer } from './DatasheetViewer';
 import {
@@ -579,6 +580,42 @@ export const ItemDetailView: React.FC<ItemDetailViewProps> = ({
             </div>
           ) : datasheetData ? (
             <div className="space-y-6">
+              {/* Technical Dimensions Summary Callout */}
+              {(() => {
+                const dims = parseItemTechnicalDimensions(item.descricao, item.categoria, item.subCategoria);
+                return (
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50/90 to-amber-100/50 border border-amber-300/80 shadow-2xs space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-md bg-amber-500 text-white">
+                          <Ruler className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-mono font-bold text-amber-950 uppercase tracking-wide">
+                          Dimensões Técnicas de Engenharia & Cotas
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white border border-amber-300 text-amber-900 font-semibold">
+                        Norma: {dims.standard}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-1">
+                      {dims.rows.slice(0, 4).map((row, rIdx) => (
+                        <div key={rIdx} className="bg-white/90 p-2 rounded-lg border border-amber-200/90 flex flex-col justify-between">
+                          <span className="text-[10px] text-slate-500 font-mono line-clamp-1">{row.parameter}</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className="text-xs font-mono font-black text-slate-900">{row.nominalValue}</span>
+                            <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1 py-0.2 rounded border border-amber-200/60">
+                              {row.tolerance.split(' ')[0]}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Verified Sources / References */}
               {datasheetData.sources && datasheetData.sources.length > 0 && (
                 <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200/80 space-y-2">

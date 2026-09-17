@@ -1,4 +1,5 @@
 import { StockItem } from '../types';
+import { parseItemTechnicalDimensions } from '../utils/technicalDimensions';
 
 export interface GroundingSource {
   title: string;
@@ -27,13 +28,15 @@ export function generateClientFallbackDatasheet(
   const isFita = descUpper.includes('FITA');
   const isParafuso = descUpper.includes('PARAFUSO') || descUpper.includes('PORCA');
 
-  const standard = isAnel
+  const dims = parseItemTechnicalDimensions(item.descricao, item.categoria, item.subCategoria);
+
+  const standard = dims.standard || (isAnel
     ? 'DIN 471 / DIN 472'
     : isRolamento
     ? 'ISO 15 / DIN 625'
     : isParafuso
     ? 'ISO 4014 / DIN 931'
-    : 'ISO 9001 / ABNT NBR';
+    : 'ISO 9001 / ABNT NBR');
 
   const material = isAnel
     ? 'Aço Mola Carbono SAE 1070 / 1090 Temperado e Revenido'
@@ -46,6 +49,13 @@ export function generateClientFallbackDatasheet(
     : 'Retificado de precisão com graxa de lítio sintética';
 
   const hardness = isAnel ? '44 a 51 HRC (Dureza Rockwell C)' : '58 a 65 HRC';
+
+  const dimensionRowsMarkdown = dims.rows
+    .map(
+      (r) =>
+        `| **${r.parameter}** | **${r.nominalValue}** | ${r.tolerance} | ${r.engineeringNote} |`
+    )
+    .join('\n');
 
   const markdown = `# DATA-SHEET TÉCNICO // ${item.codigo}
 **Denominação:** ${item.descricao}  
@@ -60,13 +70,16 @@ export function generateClientFallbackDatasheet(
 - **Ambiente Operacional:** Linhas de envase, esteiras automatizadas, redutores e conjuntos de acionamento fabril.
 - **Compatibilidade:** Total conformidade com as diretrizes de manutenção preventiva e corretiva da planta industrial Manutamaki.
 
-### 2. Especificações Dimensionais e Tolerâncias
-| Parâmetro Técnico | Especificação Nominal | Tolerância Admissível |
-| :--- | :--- | :--- |
-| **Código do Item** | ${item.codigo} | Padrão Manutamaki |
-| **Descrição Homologada** | ${item.descricao} | Normalizado |
-| **Norma Dimensional Base** | ${standard} | Classe H11 / IT8 |
-| **Temperatura de Serviço** | -20°C a +120°C | Operação Segura |
+### 2. Especificações Dimensionais e Tolerâncias Técnicas (Cotas de Engenharia)
+
+> **Cota Nominal Principal:** \`${dims.summary}\`  
+> **Norma Dimensional de Referência:** \`${dims.standard}\`
+
+| Parâmetro Dimensional / Cota | Especificação Nominal | Tolerância Admissível | Função / Aplicação no Alojamento |
+| :--- | :--- | :--- | :--- |
+${dimensionRowsMarkdown}
+| **Temperatura de Serviço** | -20°C a +120°C | Faixa Operacional Segura | Trabalho térmico contínuo na linha fabril |
+| **Norma de Inspeção Dimensional** | ABNT NBR ISO 9001:2015 | Lote 100% inspecionado | Critério de controle de recebimento |
 
 ### 3. Propriedades dos Materiais e Tratamentos
 - **Liga / Matéria-prima:** ${material}

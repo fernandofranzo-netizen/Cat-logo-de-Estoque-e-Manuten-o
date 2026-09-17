@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { google } from "googleapis";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
+import { parseItemTechnicalDimensions } from "./src/utils/technicalDimensions";
 
 dotenv.config();
 
@@ -235,10 +236,16 @@ function generateSynthesizedDatasheet(
   const isFita = descUpper.includes("FITA");
   const isParafuso = descUpper.includes("PARAFUSO") || descUpper.includes("PORCA");
 
-  const standard = isAnel ? "DIN 471 / DIN 472" : isRolamento ? "ISO 15 / DIN 625" : isParafuso ? "ISO 4014 / DIN 931" : "ISO 9001 / ABNT NBR";
+  const dims = parseItemTechnicalDimensions(itemDesc, categoria, subCategoria);
+
+  const standard = dims.standard || (isAnel ? "DIN 471 / DIN 472" : isRolamento ? "ISO 15 / DIN 625" : isParafuso ? "ISO 4014 / DIN 931" : "ISO 9001 / ABNT NBR");
   const material = isAnel ? "Aço Mola Carbono SAE 1070 / 1090 Temperado e Revenido" : isRolamento ? "Aço Cromo 100Cr6 (AISI 52100) de Alta Pureza" : "Aço Liga Estrutural de Alta Resistência";
   const finish = isAnel ? "Fosfatizado a quente com banho de óleo protetivo anticorrosivo" : "Retificado de precisão com graxa de lítio sintética";
   const hardness = isAnel ? "44 a 51 HRC (Dureza Rockwell C)" : "58 a 65 HRC";
+
+  const dimensionRowsMarkdown = dims.rows
+    .map((r) => `| **${r.parameter}** | **${r.nominalValue}** | ${r.tolerance} | ${r.engineeringNote} |`)
+    .join("\n");
 
   const markdown = `# DATA-SHEET TÉCNICO // ${itemCode}
 **Denominação:** ${itemDesc}  
@@ -253,13 +260,16 @@ function generateSynthesizedDatasheet(
 - **Ambiente Operacional:** Linhas de envase, esteiras automatizadas, redutores e conjuntos de acionamento fabril.
 - **Compatibilidade:** Total conformidade com as diretrizes de manutenção preventiva e corretiva da planta industrial Manutamaki.
 
-### 2. Especificações Dimensionais e Tolerâncias
-| Parâmetro Técnico | Especificação Nominal | Tolerância Admissível |
-| :--- | :--- | :--- |
-| **Código do Item** | ${itemCode} | Padrão Manutamaki |
-| **Descrição Homologada** | ${itemDesc} | Normalizado |
-| **Norma Dimensional Base** | ${standard} | Classe H11 / IT8 |
-| **Temperatura de Serviço** | -20°C a +120°C | Operação Segura |
+### 2. Especificações Dimensionais e Tolerâncias Técnicas (Cotas de Engenharia)
+
+> **Cota Nominal Principal:** \`${dims.summary}\`  
+> **Norma Dimensional de Referência:** \`${dims.standard}\`
+
+| Parâmetro Dimensional / Cota | Especificação Nominal | Tolerância Admissível | Função / Aplicação no Alojamento |
+| :--- | :--- | :--- | :--- |
+${dimensionRowsMarkdown}
+| **Temperatura de Serviço** | -20°C a +120°C | Faixa Operacional Segura | Trabalho térmico contínuo na linha fabril |
+| **Norma de Inspeção Dimensional** | ABNT NBR ISO 9001:2015 | Lote 100% inspecionado | Critério de controle de recebimento |
 
 ### 3. Propriedades dos Materiais e Tratamentos
 - **Liga / Matéria-prima:** ${material}
@@ -348,42 +358,23 @@ Utilize a ferramenta de busca Google Search (Google Grounding) para pesquisar ca
 - SUBCATEGORIA: ${subCategoria || "Industrial"}
 - LOCALIZAÇÃO NO ALMOXARIFADO: ${localizacao || "Almoxarifado Central"}
 
-Elabore um DATA-SHEET TÉCNICO OFICIAL minucioso, padronizado e profissional no formato Markdown. Inclua cabeçalho oficial, dados de engenharia, tabelas quando conveniente e os seguintes tópicos obrigatórios:
+REQUISITO MANDATÓRIO - DIMENSÕES TÉCNICAS E COTAS DETALHADAS:
+É OBRIGATÓRIO informar com precisão máxima todas as DIMENSÕES TÉCNICAS REAIS do respectivo item no tópico 2.
+- Extraia todas as medidas contidas na descrição do item (ex: diâmetros nominais, diâmetros externos/internos, espessuras, comprimentos, roscas, passos de rosca, medidas de canal/ranhura).
+- Cruze com as tabelas dimensionais das normas técnicas aplicáveis (ex: DIN 471 para anéis externos de eixo, DIN 472 para anéis internos de furo, DIN 933/912 para parafusos, ISO 15 para rolamentos, ASTM para telas).
+- No tópico "### 2. Especificações Dimensionais e Tolerâncias Técnicas (Cotas de Engenharia)", você DEVE OBRIGATORIAMENTE gerar uma TABELA COMPLETA COM AS COTAS com as colunas:
+  | Parâmetro Dimensional / Cota | Especificação Nominal | Tolerância Admissível | Função / Aplicação no Alojamento |
+  Inclua linhas dedicadas para cada medida física (Diâmetro Nominal d1, Espessura s, Diâmetro da Ranhura d2, Largura da Ranhura m, Folga de trabalho, etc.).
+- Nunca omita os valores numéricos em milímetros/polegadas.
 
-# DATA-SHEET TÉCNICO // ${itemCode}
-**Denominação:** ${itemDesc}  
-**Classificação:** ${categoria || "Manutenção"} // ${subCategoria || "Componente"}  
-**Status de Homologação:** Homologado para Manutenção Industrial Manutamaki  
-
----
-
-### 1. Visão Geral e Aplicação Industrial
-- Função primária em equipamentos industriais (ex.: retenção axial, vedação, transmissão, fixação estrutural)
-- Requisitos operacionais e ambiente de trabalho típico
-
-### 2. Especificações Dimensionais e Tolerâncias
-- Medidas nominais em milímetros ou polegadas (diâmetro interno/externo, espessura, comprimento, canal, passo de rosca)
-- Classe de tolerância dimensional (ex.: h11, H13, DIN 471/472 ou ISO correspondente)
-
-### 3. Propriedades dos Materiais e Tratamentos
-- Liga/Matéria-prima base (ex.: Aço Mola SAE 1070/1090 temperado, Aço Inox AISI 301/304, Borracha Nitrílica NBR 70 ShA, etc.)
-- Tratamento térmico e revestimento protetivo superficial (ex.: Fosfatizado a quente com óleo protetivo, zincado, passivado)
-- Faixa de temperatura de trabalho e dureza recomendada (ex.: 44 a 51 HRC)
-
-### 4. Normas Técnicas e Certificações
-- Normas de fabricação aplicáveis (ex.: DIN 471, DIN 472, DIN 988, ISO 9001, ABNT NBR)
-- Critérios de conformidade e testes dimensionais
-
-### 5. Procedimentos de Montagem e Cuidados de Manutenção
-- Ferramenta adequada de montagem/desmontagem recomendada para não causar deformação permanente (ex.: alicate para anéis externos com pontas calibradas)
-- Verificações periódicas de folga, corrosão e fadiga
-- Regras de segurança na instalação mecânica
-
-### 6. Equivalências e Fabricantes Homologados
-- Principais fabricantes de referência homologados (ex.: Seeger-Orbis, SKF, Timken, Gedore, Wurth, Belzer, etc.)
-- Códigos e referências comerciais conhecidas no mercado nacional e internacional
-
-Formate com alta legibilidade técnica em Português do Brasil. Incorpore os dados reais obtidos pela pesquisa do Google Search.`;
+Elabore um DATA-SHEET TÉCNICO OFICIAL minucioso, padronizado e profissional no formato Markdown. Inclua cabeçalho oficial, dados de engenharia, tabelas e os tópicos obrigatórios: 
+1. Visão Geral e Aplicação Industrial
+2. Especificações Dimensionais e Tolerâncias Técnicas (Cotas de Engenharia) [COM A TABELA COMPLETA ACIMA]
+3. Propriedades dos Materiais e Tratamentos
+4. Normas Técnicas e Certificações
+5. Procedimentos de Montagem e Cuidados de Manutenção
+6. Equivalências e Fabricantes Homologados. 
+Formate em Português do Brasil.`;
 
     let response;
     try {
