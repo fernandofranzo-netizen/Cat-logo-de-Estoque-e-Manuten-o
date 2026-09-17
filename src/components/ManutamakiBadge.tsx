@@ -2,15 +2,22 @@ import React from 'react';
 
 interface ManutamakiBadgeProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'auto';
 }
 
 export const ManutamakiBadge: React.FC<ManutamakiBadgeProps> = ({
   className = '',
-  size = 'md',
+  size = 'auto',
 }) => {
   // Scale styles based on size
   const sizeStyles = {
+    auto: {
+      container: 'px-3 sm:px-4 py-1.5 sm:py-2.5 rounded-xl gap-2.5 sm:gap-3.5',
+      logoText: 'text-xl sm:text-2xl',
+      divider: 'h-7 sm:h-9',
+      subText: 'text-[8.5px] sm:text-[10px] tracking-[0.14em] sm:tracking-[0.16em]',
+      titleText: 'text-[10.5px] sm:text-xs',
+    },
     sm: {
       container: 'px-3 py-1.5 rounded-lg gap-2.5',
       logoText: 'text-lg',

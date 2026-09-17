@@ -38,10 +38,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           </div>
         </div>
 
-        {/* Industrial Plant Official Badge */}
+        {/* Industrial Plant Official Badge (Single responsive element) */}
         <div className="flex items-center self-start md:self-center shrink-0">
-          <ManutamakiBadge size="md" className="hidden sm:inline-flex" />
-          <ManutamakiBadge size="sm" className="inline-flex sm:hidden" />
+          <ManutamakiBadge />
         </div>
       </div>
     </header>
