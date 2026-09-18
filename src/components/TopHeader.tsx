@@ -28,12 +28,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <span>MANUTAMAKI // MANUTENÇÃO INDUSTRIAL</span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase mt-1">
-              LOCALIZAR ITEM TÉCNICO
-            </h2>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+              Catálogo de Estoque Fernando
+            </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-              Encontre o código oficial, dimensões e localização física no almoxarifado antes de abrir a requisição.
+              Bem-vindo ao catálogo de estoque! Localize itens técnicos, consulte códigos oficiais, dimensões e posições físicas no almoxarifado antes de realizar sua requisição.
             </p>
           </div>
         </div>
