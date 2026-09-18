@@ -29,12 +29,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-              Catálogo de Estoque Fernando
+              Catálogo de Estoque e Manutenção
             </h1>
-
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-              Bem-vindo ao catálogo de estoque! Localize itens técnicos, consulte códigos oficiais, dimensões e posições físicas no almoxarifado antes de realizar sua requisição.
-            </p>
           </div>
         </div>
 
