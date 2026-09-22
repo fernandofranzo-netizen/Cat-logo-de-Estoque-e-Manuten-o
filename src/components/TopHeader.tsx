@@ -28,9 +28,16 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
               <span>MANUTAMAKI // MANUTENÇÃO INDUSTRIAL</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-              Catálogo de Estoque e Manutenção
+            <h1
+              className="text-2xl sm:text-3xl font-black tracking-tight uppercase mt-1"
+              style={{ color: '#003399' }}
+            >
+              LOCALIZAR ITEM TÉCNICO
             </h1>
+
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
+              Encontre o código oficial, dimensões e localização física no almoxarifado antes de abrir a requisição.
+            </p>
           </div>
         </div>
 
