@@ -33,8 +33,8 @@ export const PinModal: React.FC<PinModalProps> = ({
       <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="p-6 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
-            <Lock className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 p-2 flex items-center justify-center mx-auto shadow-md">
+            <img src="/logo-transparent.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
 
           <div>

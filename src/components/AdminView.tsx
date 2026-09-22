@@ -223,6 +223,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
           {/* Console Tag Badge */}
           <div className="flex items-center gap-2">
+            <img src="/logo-transparent.png" alt="Logo" className="w-5 h-5 object-contain shrink-0" />
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-100 border border-slate-200/90 text-slate-700 font-mono text-[11px] font-semibold tracking-wider uppercase">
               MANUTAMAKI // CONSOLE DE GESTÃO DO CATÁLOGO
             </span>

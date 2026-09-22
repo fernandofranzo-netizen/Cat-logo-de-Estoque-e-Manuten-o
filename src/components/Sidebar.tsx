@@ -114,11 +114,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <img
-            src="/cm-logo.svg"
-            alt="CM - Catálogo de Manutenção"
-            width={34}
-            height={34}
-            className="w-8 h-8 rounded-lg shadow-sm shrink-0 object-contain"
+            src="/logo-transparent.png"
+            alt="Catálogo de Manutenção"
+            width={38}
+            height={38}
+            className="w-9 h-9 rounded-lg shadow-sm shrink-0 object-contain"
           />
           <div>
             <div className="flex items-center gap-1.5">
